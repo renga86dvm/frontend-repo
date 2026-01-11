@@ -1,0 +1,131 @@
+PROJECT FULL GITHUB REPO STRUCTURE:
+===================================
+aws-devops-microservices-project/
+│
+├── frontend/
+│   ├── public/
+│   │   └── index.html
+│   ├── src/
+│   │   └── app.js
+│   ├── package.json
+│   ├── Jenkinsfile
+│   └── README.md
+│
+├── backend/
+│   ├── user-service/
+│   │   ├── app.js
+│   │   ├── db.js
+│   │   ├── package.json
+│   │   ├── Dockerfile
+│   │   └── Jenkinsfile
+│   │
+│   ├── order-service/
+│   │   ├── app.js
+│   │   ├── db.js
+│   │   ├── package.json
+│   │   ├── Dockerfile
+│   │   └── Jenkinsfile
+│
+├── infrastructure/
+│   └── architecture.png
+│
+└── README.md
+
+
+FRONTEND (S3 + CloudFront + Route53):	
+=====================================
+Frontend Type
+Node.js Static Website (Build → Upload to S3)
+Jenkins runs on Frontend EC2
+
+frontend/public/index.html
+--------------------------
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DevOps Demo App</title>
+</head>
+<body>
+  <h1>DevOps Microservices App</h1>
+  <div id="data"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
+
+frontend/src/app.js
+-------------------
+fetch('https://api.yourdomain.com/users')
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("data").innerHTML =
+      "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+  });
+
+frontend/package.json
+---------------------
+{
+  "name": "frontend-app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "mkdir -p build && cp -r public/* build/"
+  }
+}
+
+
+Frontend Jenkinsfile
+EC2 → GitHub → S3 → CloudFront
+-------------------------------
+frontend/Jenkinsfile
+--------------------
+pipeline {
+  agent any
+
+  environment {
+    S3_BUCKET = "my-frontend-devops-app"
+    AWS_REGION = "ap-south-1"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/your-username/aws-devops-microservices-project.git'
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh '''
+          cd frontend
+          npm install
+          npm run build
+        '''
+      }
+    }
+
+    stage('Upload to S3') {
+      steps {
+        sh '''
+          aws s3 sync frontend/build s3://$S3_BUCKET --delete
+        '''
+      }
+    }
+
+    stage('Invalidate CloudFront') {
+      steps {
+        sh '''
+          aws cloudfront create-invalidation \
+          --distribution-id E123456789 \
+          --paths "/*"
+        '''
+      }
+    }
+  }
+}
+
+
+
+note:
+-----
+Frontend AWS Flow(GitHub → Jenkins (EC2) → S3 → CloudFront → Route53)
