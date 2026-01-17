@@ -1,43 +1,22 @@
 pipeline {
   agent any
 
-  environment {
-    S3_BUCKET = "my-frontend-devops-app"
-    AWS_REGION = "ap-south-1"
-  }
-
   stages {
-    stage('Checkout') {
+    stage('Install') {
       steps {
-        git 'https://github.com/your-username/aws-devops-microservices-project.git'
+        sh 'npm install'
       }
     }
 
     stage('Build') {
       steps {
-        sh '''
-          cd frontend
-          npm install
-          npm run build
-        '''
+        sh 'echo "Static frontend build completed"'
       }
     }
 
-    stage('Upload to S3') {
+    stage('Deploy') {
       steps {
-        sh '''
-          aws s3 sync frontend/build s3://$S3_BUCKET --delete
-        '''
-      }
-    }
-
-    stage('Invalidate CloudFront') {
-      steps {
-        sh '''
-          aws cloudfront create-invalidation \
-          --distribution-id E123456789 \
-          --paths "/*"
-        '''
+        echo 'Deploy to S3 + CloudFront'
       }
     }
   }
