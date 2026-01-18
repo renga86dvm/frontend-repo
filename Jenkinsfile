@@ -4,29 +4,39 @@ pipeline {
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
         S3_BUCKET = 'rengafrontends3'
+        CLOUDFRONT_DISTRIBUTION_ID = 'E28B08W45JIKSL'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/renga86dvm/frontend-repo.git',
-                    credentialsId: 'aws-creds'
+                    url: 'https://github.com/nexgen369/frontendproject.git'
             }
         }
 
-        stage('Build React') {
+        stage('Build Frontend') {
             steps {
-                sh 'chmod +x build.sh'
-                sh './build.sh'
+                sh '''
+                  chmod +x build.sh
+                  ./build.sh
+                '''
             }
         }
 
         stage('Deploy to S3 & Invalidate CloudFront') {
             steps {
-                withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-                    sh 'aws s3 sync build/ s3://$S3_BUCKET --delete'
-                    sh 'aws cloudfront create-invalidation --distribution-id E28B08W45JIKSL --paths "/*"'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials'
+                ]]) {
+                    sh '''
+                      aws s3 sync build/ s3://$S3_BUCKET --delete
+                      aws cloudfront create-invalidation \
+                        --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+                        --paths "/*"
+                    '''
                 }
             }
         }
