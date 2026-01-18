@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/nexgen369/frontendproject.git'
+                    url: 'https://github.com/renga86dvm/frontend-repo.git'
             }
         }
 
