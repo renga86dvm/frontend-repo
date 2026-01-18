@@ -1,23 +1,34 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Install') {
-      steps {
-        sh 'npm install'
-      }
+    environment {
+        AWS_DEFAULT_REGION = 'us-east-1'
+        S3_BUCKET = 'project-frontend-bucket-10-11-25 '
     }
 
-    stage('Build') {
-      steps {
-        sh 'echo "Static frontend build completed"'
-      }
-    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Amruta9993/Frontend-new-project.git',
+                    credentialsId: 'frontend'
+            }
+        }
 
-    stage('Deploy') {
-      steps {
-        echo 'Deploy to S3 + CloudFront'
-      }
+        stage('Build React') {
+            steps {
+                sh 'chmod +x build.sh'
+                sh './build.sh'
+            }
+        }
+
+        stage('Deploy to S3 & Invalidate CloudFront') {
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'aws s3 sync build/ s3://$S3_BUCKET --delete'
+                    sh 'aws cloudfront create-invalidation --distribution-id E28B08W45JIKSL --paths "/*"'
+                }
+            }
+        }
     }
-  }
 }
