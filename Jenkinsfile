@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        S3_BUCKET = 'rengafrontends3'
-        CLOUDFRONT_DISTRIBUTION_ID = 'E3QMO30QLIX6BL'
+        S3_BUCKET = 'renga-bucket20260314'
     }
 
     stages {
@@ -29,13 +28,10 @@ pipeline {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds'
+                    credentialsId: 'aws-id'
                 ]]) {
                     sh '''
                       aws s3 sync build/ s3://$S3_BUCKET --delete
-                      aws cloudfront create-invalidation \
-                        --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-                        --paths "/*"
                     '''
                 }
             }
