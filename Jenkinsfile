@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        S3_BUCKET = 'renga-bucket20260314'
+        S3_BUCKET = 'nxtgen0607'
+        CLOUDFRONT_DISTRIBUTION_ID = 'EKIA37GS1V5AT'
     }
 
     stages {
@@ -11,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/renga86dvm/frontend-repo.git'
+                    url: 'https://github.com/madan0607/frontend.git'
             }
         }
 
@@ -28,10 +29,13 @@ pipeline {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws_id'
+                    credentialsId: 'aws-credentials'
                 ]]) {
                     sh '''
                       aws s3 sync build/ s3://$S3_BUCKET --delete
+                      aws cloudfront create-invalidation \
+                        --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+                        --paths "/*"
                     '''
                 }
             }
